@@ -2,9 +2,10 @@ import json
 import os
 import re
 import sys
+
+import meaningless.utilities.common as common
 from meaningless import JSONDownloader
 from meaningless.utilities.common import BIBLE_TRANSLATIONS
-import meaningless.utilities.common as common
 
 
 # Replacing the function with a new version to allow for proper download of all verses in a chapter
@@ -27,6 +28,7 @@ books = ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy", "Joshua", "
 COUNT = 0
 TOTAL = 0
 
+
 # download all the books
 def download(book_name, folder, v):
     all_clear = True
@@ -40,8 +42,6 @@ def download(book_name, folder, v):
 
 # combine all the books into one json file
 def combine(folder, n):
-    d = os.listdir(folder)
-
     combined_data = {}
 
     # Iterate through all files in the folder
@@ -77,13 +77,13 @@ def generate_progress_bar(progress, total, length=20):
     return f"[{progress_bar}] {progress:2d}/{total}"
 
 
-def generate_bible(translation, show_progress=True):
+def generate_bible(bible_translation, show_progress=True):
     # root
-    if not os.path.exists(translation):
-        os.makedirs(translation)
+    if not os.path.exists(bible_translation):
+        os.makedirs(bible_translation)
 
-    root = translation + "/"
-    path = root + translation + "_books"
+    root = bible_translation + "/"
+    path = root + bible_translation + "_books"
     if not os.path.exists(path):
         os.makedirs(path)
 
@@ -93,46 +93,52 @@ def generate_bible(translation, show_progress=True):
     for i, file in enumerate(files):
         file_path = os.path.join(path, file)
         os.remove(file_path)
-    if show_progress: print("\rDeleted " + str(total_files) + " files.")
+    if show_progress:
+        print("\rDeleted " + str(total_files) + " files.")
     # download all files
     flag = ""
     for i, book in enumerate(books):
         global COUNT, TOTAL
         COUNT += 1
         if not show_progress:
-            print(f"\r[+] Downloading {translation[:8]:<8} ({generate_progress_bar(COUNT, TOTAL, 40)})"
-                  f" ({round((COUNT/TOTAL) * 100)}%)", end="")
-        if not download(books[i], path, translation):
+            print(f"\r[+] Downloading {bible_translation[:8]:<8} ({generate_progress_bar(COUNT, TOTAL, 40)})"
+                  f" ({round((COUNT / TOTAL) * 100)}%)", end="")
+        if not download(books[i], path, bible_translation):
             flag = book
             break
-        if show_progress: print(
-            f"\r[+] Downloading book: {book[:15]:<15} ({generate_progress_bar(i + 1, len(books), 30)})", end="")
+        if show_progress:
+            print(
+                f"\r[+] Downloading book: {book[:15]:<15} ({generate_progress_bar(i + 1, len(books), 30)})", end="")
 
     if flag != "":
-        if show_progress: print("\r[+] ERROR: " + flag + " failed to download.")
+        if show_progress:
+            print("\r[+] ERROR: " + flag + " failed to download.")
     else:
-        if show_progress: print("\r[+] Download complete.")
+        if show_progress:
+            print("\r[+] Download complete.")
 
     # combine all books
-    combine(path, root + translation + "_bible.json")
-    if show_progress: print("[+] All books combined into: " + root + translation + ".json")
+    combine(path, root + bible_translation + "_bible.json")
+    if show_progress:
+        print("[+] All books combined into: " + root + bible_translation + ".json")
     # generate sql
-    out_name = root + translation + "_bible.sql"
-    in_name = root + translation + "_bible.json"
+    out_name = root + bible_translation + "_bible.sql"
+    in_name = root + bible_translation + "_bible.json"
     with open(out_name, 'w') as output_file:
         with open(in_name, 'r') as input_file:
             output_file.write(
-                "create table " + translation.lower() + "(book_id int not null, book varchar(255) not null, chapter "
-                                                        "int not null, verse int not null, text varchar(1000) not "
-                                                        "null, primary key (book_id, chapter, verse));\n\n")
+                "create table " + bible_translation.lower() + "(book_id int not null, book varchar(255) not null, "
+                                                              "chapter"
+                                                              "int not null, verse int not null, text varchar(1000) not"
+                                                              "null, primary key (book_id, chapter, verse));\n\n")
 
             cd = json.load(input_file)
 
             for book, chapters in cd.items():
                 for chapter, verses in chapters.items():
                     output_file.write(
-                        "INSERT INTO " + translation.lower() + "(book_id, book, chapter, verse, text) "
-                                                               "VALUES\n")
+                        "INSERT INTO " + bible_translation.lower() + "(book_id, book, chapter, verse, text) "
+                                                                     "VALUES\n")
                     for verse_num, verse_content in verses.items():
                         book_id = books.index(book) + 1
                         output_file.write("(" + str(
@@ -143,7 +149,8 @@ def generate_bible(translation, show_progress=True):
                         else:
                             output_file.write(",\n")
 
-    if show_progress: print("[+] SQL file created: " + out_name)
+    if show_progress:
+        print("[+] SQL file created: " + out_name)
 
 
 if __name__ == '__main__':
