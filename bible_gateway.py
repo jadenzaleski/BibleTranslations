@@ -48,11 +48,13 @@ def combine(folder, n):
     for file_name in os.listdir(folder):
         if file_name.endswith('.json'):
             fp = os.path.join(folder, file_name)
-            with open(fp, 'r') as f:
-                data = json.load(f)
-                # Exclude the "Info" section if present
-                if "Info" in data:
-                    del data["Info"]
+
+            try:
+                with open(fp, 'r') as f:
+                    data = json.load(f)
+                    # Exclude the "Info" section if present
+                    if "Info" in data:
+                        del data["Info"]
                     # Remove extra whitespace characters from verse content
                     for book, chapters in data.items():
                         for chapter, verses in chapters.items():
@@ -62,11 +64,16 @@ def combine(folder, n):
                                 cleaned_verse_content = cleaned_verse_content.replace("'", "''")
                                 data[book][chapter][verse_num] = cleaned_verse_content.strip()
 
-                combined_data.update(data)
+                    combined_data.update(data)
+            except json.JSONDecodeError as e:
+                print(f"Error parsing {file_name}: {e}")
+                continue
 
-    # Write the combined data to the output file
+    # Write the combined data to the output file in order
+    ordered_data = {book: combined_data[book] for book in books if book in combined_data}
+
     with open(n, 'w') as out_file:
-        json.dump(combined_data, out_file, indent=4)
+        json.dump(ordered_data, out_file, indent=4)
 
 
 # a text progress bar
@@ -120,7 +127,7 @@ def generate_bible(bible_translation, show_progress=True):
     # combine all books
     combine(path, root + bible_translation + "_bible.json")
     if show_progress:
-        print("[+] All books combined into: " + root + bible_translation + ".json")
+        print("[+] All books combined into: " + root + bible_translation + "_bible.json")
     # generate sql
     out_name = root + bible_translation + "_bible.sql"
     in_name = root + bible_translation + "_bible.json"
