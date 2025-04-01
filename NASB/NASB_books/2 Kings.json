@@ -344,7 +344,7 @@
       "2": "Jehoash did what was right in the sight of the Lord all his days that Jehoiada the priest instructed him.",
       "3": "Only the high places did not end; the people still sacrificed and burned incense on the high places.",
       "4": "Then Jehoash said to the priests, “All the money of the sacred offerings which is brought into the house of the Lord, in current money, both the money of each man’s assessment and all the money which anyone’s heart prompts him to bring into the house of the Lord,",
-      "5": "The priests are to take it for themselves, each from his acquaintance; and they shall repair damage to the house wherever any damage is found.”",
+      "5": "the priests are to take it for themselves, each from his acquaintance; and they shall repair damage to the house wherever any damage is found.”",
       "6": "But it came about that in the twenty-third year of King Jehoash, the priests had not repaired any damage to the house.",
       "7": "So King Jehoash summoned Jehoiada the priest, and the other priests, and said to them, “Why do you not repair damage to the house? Now then, you are not to take any more money from your acquaintances, but give it up for the damage to the house.”",
       "8": "The priests then agreed that they would not take any more money from the people, nor would they repair damage to the house.",
@@ -772,8 +772,8 @@
   },
   "Info": {
     "Language": "English",
-    "Meaningless": "1.0.0",
-    "Timestamp": "2024-04-22T13:51:45.539169-04:00",
+    "Meaningless": "1.2.0",
+    "Timestamp": "2025-03-31T16:28:30.343836-04:00",
     "Translation": "NASB"
   }
 }

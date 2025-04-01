@@ -227,7 +227,7 @@
     "10": {
       "1": "Then Samuel took the flask of oil, poured it on Saul’s head, kissed him, and said, “Has the Lord not anointed you as ruler over His inheritance?",
       "2": "When you leave me today, then you will find two men close to Rachel’s tomb in the territory of Benjamin at Zelzah; and they will say to you, ‘The donkeys which you went to look for have been found. Now behold, your father has stopped talking about the donkeys and is anxious about you, saying, “What am I to do about my son?”’",
-      "3": "Then you will go on further from there, and you will come as far as the oak of Tabor, and there three men going up to God at Bethel will meet you: one carrying three young goats, another carrying three loaves of bread, and another carrying a jug of wine.",
+      "3": "Then you will go on farther from there, and you will come as far as the oak of Tabor, and there three men going up to God at Bethel will meet you: one carrying three young goats, another carrying three loaves of bread, and another carrying a jug of wine.",
       "4": "And they will greet you and give you two loaves of bread, which you will accept from their hand.",
       "5": "Afterward you will come to the hill of God where the Philistine garrison is; and it shall be as soon as you have come there to the city, that you will meet a group of prophets coming down from the high place with harp, tambourine, flute, and a lyre in front of them, and they will be prophesying.",
       "6": "Then the Spirit of the Lord will rush upon you, and you will prophesy with them and be changed into a different man.",
@@ -875,8 +875,8 @@
   },
   "Info": {
     "Language": "English",
-    "Meaningless": "1.0.0",
-    "Timestamp": "2024-04-22T13:51:41.175474-04:00",
+    "Meaningless": "1.2.0",
+    "Timestamp": "2025-03-31T16:28:25.664657-04:00",
     "Translation": "NASB"
   }
 }

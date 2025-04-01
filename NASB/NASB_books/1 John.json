@@ -18,7 +18,7 @@
       "3": "By this we know that we have come to know Him, if we keep His commandments.",
       "4": "The one who says, “I have come to know Him,” and does not keep His commandments, is a liar, and the truth is not in him;",
       "5": "but whoever follows His word, in him the love of God has truly been perfected. By this we know that we are in Him:",
-      "6": "the one who says that he remains in Him ought, himself also, walk just as He walked.",
+      "6": "the one who says that he remains in Him ought, himself also, to walk just as He walked.",
       "7": "Beloved, I am not writing a new commandment to you, but an old commandment which you have had from the beginning; the old commandment is the word which you have heard.",
       "8": "On the other hand, I am writing a new commandment to you, which is true in Him and in you, because the darkness is passing away and the true Light is already shining.",
       "9": "The one who says that he is in the Light and yet hates his brother or sister is in the darkness until now.",
@@ -118,8 +118,8 @@
   },
   "Info": {
     "Language": "English",
-    "Meaningless": "1.0.0",
-    "Timestamp": "2024-04-22T13:52:52.931153-04:00",
+    "Meaningless": "1.2.0",
+    "Timestamp": "2025-03-31T16:29:23.360379-04:00",
     "Translation": "NASB"
   }
 }

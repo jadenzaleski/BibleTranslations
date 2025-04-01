@@ -170,10 +170,10 @@
       "22": "Yet you, his son, Belshazzar, have not humbled your heart, even though you knew all this,",
       "23": "but you have risen up against the Lord of heaven; and they have brought the vessels of His house before you, and you and your nobles, your wives, and your concubines have been drinking wine out of them; and you have praised the gods of silver and gold, of bronze, iron, wood, and stone, which do not see, nor hear, nor understand. But the God in whose hand are your life-breath and all your ways, you have not glorified.",
       "24": "Then the hand was sent from Him and this inscription was written out.",
-      "25": "“Now this is the inscription that was written:\n‘Menē, Menē, Tekēl, Upharsin.’",
-      "26": "This is the interpretation of the message: ‘Menē’—God has numbered your kingdom and put an end to it.",
-      "27": "‘Tekēl’—you have been weighed on the scales and found deficient.",
-      "28": "‘Perēs’—your kingdom has been divided and given to the Medes and Persians.”",
+      "25": "“Now this is the inscription that was written:\n‘Mene, Mene, Tekel, Upharsin.’",
+      "26": "This is the interpretation of the message: ‘Mene’—God has numbered your kingdom and put an end to it.",
+      "27": "‘Tekel’—you have been weighed on the scales and found deficient.",
+      "28": "‘Peres’—your kingdom has been divided and given to the Medes and Persians.”",
       "29": "Then Belshazzar gave orders, and they clothed Daniel with purple and put a necklace of gold around his neck, and issued a proclamation concerning him that he now had authority as the third ruler in the kingdom.",
       "30": "That same night Belshazzar the Chaldean king was killed.",
       "31": "So Darius the Mede received the kingdom at about the age of sixty-two."
@@ -384,8 +384,8 @@
   },
   "Info": {
     "Language": "English",
-    "Meaningless": "1.0.0",
-    "Timestamp": "2024-04-22T13:52:24.998538-04:00",
+    "Meaningless": "1.2.0",
+    "Timestamp": "2025-03-31T16:28:56.819322-04:00",
     "Translation": "NASB"
   }
 }
