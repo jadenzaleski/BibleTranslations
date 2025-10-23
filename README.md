@@ -27,6 +27,8 @@ How to use the package here.
 You can find all the change information [here](CHANGELOG.md).
 
 ## Contributing
+Be sure to check out the [bible-translations project](https://github.com/users/jadenzaleski/projects/7) to see where you can help!
+
 Guidelines for contributing can be found [here](CONTRIBUTING.md).
 
 ## Disclaimer
