@@ -10,15 +10,57 @@ It also holds bundled translations in various formats available for download.
 ## Download
 Here are all possible translations, precompiled and bundled.
 
-| Translation | SQL     | JSON     | Copyright | Notes |
-|-------------|---------|----------|-----------|-------|
-| KJV         | KJV_SQL | KJV_JSON | link      |       |
-|             |         |          |           |       |
-|             |         |          |           |       |
-|             |         |          |           |       |
+| Translation | SQL | JSON | Copyright | Notes |
+|-------------|-----|------|-----------|-------|
+| KJV         | -   | -    | -         | -     |
+|             |     |      |           |       |
+|             |     |      |           |       |
+|             |     |      |           |       |
 
 ## Install
-Install Intructions here.
+
+You can Install from PyPI
+```bash
+pip install bible-translations 
+```
+The package provides a CLI command:
+```bash
+bt
+# or
+bible-translations
+```
+
+### Install from local source
+Clone the repo and install in editable mode:
+```bash
+git clone https://github.com/jadenzaleski/bible-translations.git
+cd bible-translations
+python -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip setuptools wheel
+pip install -e .
+```
+
+### Build from a local source
+Generate a wheel and source distribution:
+```bash
+python -m build
+```
+
+This creates a dist/ folder with:
+- .whl → wheel (binary distribution)
+- .tar.gz → source distribution
+
+You can install the wheel to test locally:
+```bash
+pip install dist/bible_translations*.whl
+```
+
+### Run Tests
+```bash
+pip install pytest
+pytest
+```
 
 ## Usage
 How to use the package here.

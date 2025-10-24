@@ -1,0 +1,58 @@
+[project]
+name = "bible-translations"
+version = "0.1.0"
+description = "A package to fetch and provide you all the Bible translations available on the internet."
+authors = [
+    { name="Example Author", email="author@example.com" },
+]
+maintainers = [
+    { name="Example Author", email="author@example.com" },
+]
+readme = { file = "README.md", content-type = "text/markdown" }
+requires-python = ">=3.13"
+license = "MIT"
+license-files = ["LICEN[CS]E*"]
+keywords = [
+    "bible",
+    "translation",
+    "holy",
+    "scrape",
+    "fetch"
+]
+# https://pypi.org/classifiers/
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: Religion",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.13",
+]
+
+[project.urls]
+Homepage = "https://github.com/jadenzaleski/bible-translations"
+Documentation = "https://github.com/jadenzaleski/bible-translations/wiki"
+Issues = "https://github.com/jadenzaleski/bible-translations/issues"
+Changelog = "https://github.com/jadenzaleski/bible-translations/releases"
+
+[project.scripts]
+bt = "bible_translations.core:main"
+bible-translations = "bible_translations.core:main"
+
+[build-system]
+requires = [
+    "setuptools>=80.9.0",
+    "wheel"
+]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
