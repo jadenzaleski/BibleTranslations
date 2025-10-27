@@ -21,6 +21,7 @@ class KJV(Translation):
     async def aget_verse(self, book_name: str, chapter_number: int, verse_number: int) -> Verse:
         pass
 
-    def _aget_selection_range(self, start_book: str, start_chapter: int, start_verse: int, end_book: str,
-                              end_chapter: int, end_verse: int) -> list[Verse]:
+    def _aget_selection_range(
+        self, start_book: str, start_chapter: int, start_verse: int, end_book: str, end_chapter: int, end_verse: int
+    ) -> list[Verse]:
         pass

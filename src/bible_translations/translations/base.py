@@ -186,16 +186,16 @@ class Translation(ABC):
     # ---------- Selection retrieval ----------
 
     async def aget_selection(
-            self,
-            start_ref: str | None = None,
-            end_ref: str | None = None,
-            *,
-            start_book: str | None = None,
-            start_chapter: int | None = None,
-            start_verse: int | None = None,
-            end_book: str | None = None,
-            end_chapter: int | None = None,
-            end_verse: int | None = None,
+        self,
+        start_ref: str | None = None,
+        end_ref: str | None = None,
+        *,
+        start_book: str | None = None,
+        start_chapter: int | None = None,
+        start_verse: int | None = None,
+        end_book: str | None = None,
+        end_chapter: int | None = None,
+        end_verse: int | None = None,
     ) -> list[Verse]:
         """
         Asynchronously return a continuous selection of verses between two points.
@@ -225,16 +225,16 @@ class Translation(ABC):
         return self._aget_selection_range(start_book, start_chapter, start_verse, end_book, end_chapter, end_verse)
 
     async def get_selection(
-            self,
-            start_ref: str | None = None,
-            end_ref: str | None = None,
-            *,
-            start_book: str | None = None,
-            start_chapter: int | None = None,
-            start_verse: int | None = None,
-            end_book: str | None = None,
-            end_chapter: int | None = None,
-            end_verse: int | None = None,
+        self,
+        start_ref: str | None = None,
+        end_ref: str | None = None,
+        *,
+        start_book: str | None = None,
+        start_chapter: int | None = None,
+        start_verse: int | None = None,
+        end_book: str | None = None,
+        end_chapter: int | None = None,
+        end_verse: int | None = None,
     ) -> list[Verse]:
         """
         Synchronously return a continuous selection of verses between two points.
@@ -262,17 +262,18 @@ class Translation(ABC):
             end_book, end_chapter, end_verse = self._parse_ref(end_ref)
 
         return _run_async(
-            self._aget_selection_range(start_book, start_chapter, start_verse, end_book, end_chapter, end_verse))
+            self._aget_selection_range(start_book, start_chapter, start_verse, end_book, end_chapter, end_verse)
+        )
 
     @abstractmethod
     def _aget_selection_range(
-            self,
-            start_book: str,
-            start_chapter: int,
-            start_verse: int,
-            end_book: str,
-            end_chapter: int,
-            end_verse: int,
+        self,
+        start_book: str,
+        start_chapter: int,
+        start_verse: int,
+        end_book: str,
+        end_chapter: int,
+        end_verse: int,
     ) -> list[Verse]:
         """
         Asynchronously retrieve a continuous list of verses between two reference points.
