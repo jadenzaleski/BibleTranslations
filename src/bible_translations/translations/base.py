@@ -1,3 +1,4 @@
+import asyncio
 from abc import ABC, abstractmethod
 
 from bible_translations.models.book import Book
@@ -5,12 +6,25 @@ from bible_translations.models.chapter import Chapter
 from bible_translations.models.verse import Verse
 
 
+def _run_async(coro):
+    """
+    Safely run an async coroutine in both sync and async contexts.
+
+    - If no event loop is running, it creates one.
+    - If called within an existing loop, schedules a new task.
+    """
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(coro)
+    else:
+        return loop.create_task(coro)
+
+
 class Translation(ABC):
     """
-    Abstract base class defining the standard interface for all Bible translations.
-
-    Every concrete translation implementation (e.g., KJV, ESV)
-    must inherit from this class and implement the abstract retrieval methods.
+    Base class for all Bible translations.
+    Implementations should define async methods; sync wrappers are provided for convenience.
     """
 
     name: str
@@ -90,128 +104,189 @@ class Translation(ABC):
     # ---------- Retrieval methods ----------
 
     @abstractmethod
+    async def aget_books(self) -> list[Book]:
+        """
+        Asynchronously return all books available in this translation.
+
+        :returns: list[Book]: A list of all `Book` objects for the translation.
+        """
+        raise NotImplementedError
+
     def get_books(self) -> list[Book]:
         """
-        Return all books available in this translation.
+        Synchronously return all books available in this translation.
 
-        Returns:
-            list[Book]: A list of all `Book` objects for the translation.
+        :returns: list[Book]: A list of all `Book` objects for the translation.
+        """
+        return _run_async(self.aget_books())
+
+    @abstractmethod
+    async def aget_book(self, name: str) -> Book:
+        """
+        Asynchronously return a single book by name.
+
+        :param name: The book name (e.g., "Genesis", "John").
+        :returns: Book: The corresponding `Book` object containing all chapters and verses.
         """
         raise NotImplementedError
 
-    @abstractmethod
     def get_book(self, name: str) -> Book:
         """
-        Return a single book by name.
+        Synchronously return a single book by name.
 
-        Args:
-            name (str): The book name (e.g., "Genesis", "John").
+        :param name: The book name (e.g., "Genesis", "John").
+        :returns: Book: The corresponding `Book` object containing all chapters and verses.
+        """
+        return _run_async(self.aget_book(name))
 
-        Returns:
-            Book: The corresponding `Book` object containing all chapters and verses.
+    @abstractmethod
+    async def aget_chapter(self, book_name: str, chapter_number: int) -> Chapter:
+        """
+        Asynchronously return a single chapter by book name and chapter number.
+
+        :param book_name: Name of the book (e.g., "John").
+        :param chapter_number: Chapter number to retrieve.
+        :returns: Chapter: The `Chapter` object, including its verses.
         """
         raise NotImplementedError
 
-    @abstractmethod
     def get_chapter(self, book_name: str, chapter_number: int) -> Chapter:
         """
-        Return a single chapter by book name and chapter number.
+        Synchronously return a single chapter by book name and chapter number.
 
-        Args:
-            book_name (str): Name of the book (e.g., "John").
-            chapter_number (int): Chapter number to retrieve.
-
-        Returns:
-            Chapter: The `Chapter` object, including its verses.
+        :param book_name: Name of the book (e.g., "John").
+        :param chapter_number: Chapter number to retrieve.
+        :returns: Chapter: The `Chapter` object, including its verses.
         """
-        raise NotImplementedError
+        return _run_async(self.aget_chapter(book_name, chapter_number))
 
     @abstractmethod
-    def get_verse(self, book_name: str, chapter_number: int, verse_number: int) -> Verse:
+    async def aget_verse(self, book_name: str, chapter_number: int, verse_number: int) -> Verse:
         """
-        Return a single verse by book, chapter, and verse number.
+        Asynchronously return a single verse by book, chapter, and verse number.
 
-        Args:
-            book_name (str): Name of the book.
-            chapter_number (int): Chapter number.
-            verse_number (int): Verse number.
-
-        Returns:
-            Verse: The requested `Verse` object, linked to its chapter, book, and translation.
+        :param book_name: Name of the book.
+        :param chapter_number: Chapter number.
+        :param verse_number: Verse number.
+        :returns: Verse: The requested `Verse` object, linked to its chapter, book, and translation.
         """
         raise NotImplementedError
+
+    async def get_verse(self, book_name: str, chapter_number: int, verse_number: int) -> Verse:
+        """
+        Synchronously return a single verse by book, chapter, and verse number.
+
+        :param book_name: Name of the book.
+        :param chapter_number: Chapter number.
+        :param verse_number: Verse number.
+        :returns: Verse: The requested `Verse` object, linked to its chapter, book, and translation.
+        """
+        return _run_async(self.aget_verse(book_name, chapter_number, verse_number))
 
     # ---------- Selection retrieval ----------
 
-    def get_selection(
-        self,
-        start_ref: str | None = None,
-        end_ref: str | None = None,
-        *,
-        start_book: str | None = None,
-        start_chapter: int | None = None,
-        start_verse: int | None = None,
-        end_book: str | None = None,
-        end_chapter: int | None = None,
-        end_verse: int | None = None,
+    async def aget_selection(
+            self,
+            start_ref: str | None = None,
+            end_ref: str | None = None,
+            *,
+            start_book: str | None = None,
+            start_chapter: int | None = None,
+            start_verse: int | None = None,
+            end_book: str | None = None,
+            end_chapter: int | None = None,
+            end_verse: int | None = None,
     ) -> list[Verse]:
         """
-        Return a continuous selection of verses between two points.
+        Asynchronously return a continuous selection of verses between two points.
 
-        Can be called with string references:
-            get_selection("John 3:16", "John 5:1")
+        Can be called with string references or explicit numeric arguments:
 
-        or with explicit numeric arguments:
-            get_selection(
+            await aget_selection("John 3:16", "John 5:1")
+
+            await aget_selection(
                 start_book="John", start_chapter=3, start_verse=16,
-                end_book="John", end_chapter=5, end_verse=1
-            )
+                end_book="John", end_chapter=5, end_verse=1)
 
-        Args:
-            start_ref (str | None): Optional string reference for the start (e.g., "John 3:16").
-            end_ref (str | None): Optional string reference for the end (e.g., "John 5:1").
-            start_book (str | None): Start book name if using numeric mode.
-            start_chapter (int | None): Start chapter number.
-            start_verse (int | None): Start verse number.
-            end_book (str | None): End book name if using numeric mode.
-            end_chapter (int | None): End chapter number.
-            end_verse (int | None): End verse number.
-
-        Returns:
-            list[Verse]: A list of `Verse` objects covering the inclusive range.
+        :param start_ref: Optional string reference for the start (e.g., "John 3:16").
+        :param end_ref: Optional string reference for the end (e.g., "John 5:1").
+        :param start_book: Start book name if using numeric mode.
+        :param start_chapter: Start chapter number.
+        :param start_verse: Start verse number.
+        :param end_book: End book name if using numeric mode.
+        :param end_chapter: End chapter number.
+        :param end_verse: End verse number.
+        :returns: list[Verse]: A list of `Verse` objects covering the inclusive range.
         """
         if start_ref and end_ref:
             start_book, start_chapter, start_verse = self._parse_ref(start_ref)
             end_book, end_chapter, end_verse = self._parse_ref(end_ref)
 
-        return self._get_selection_range(start_book, start_chapter, start_verse, end_book, end_chapter, end_verse)
+        return self._aget_selection_range(start_book, start_chapter, start_verse, end_book, end_chapter, end_verse)
 
-    @abstractmethod
-    def _get_selection_range(
-        self,
-        start_book: str,
-        start_chapter: int,
-        start_verse: int,
-        end_book: str,
-        end_chapter: int,
-        end_verse: int,
+    async def get_selection(
+            self,
+            start_ref: str | None = None,
+            end_ref: str | None = None,
+            *,
+            start_book: str | None = None,
+            start_chapter: int | None = None,
+            start_verse: int | None = None,
+            end_book: str | None = None,
+            end_chapter: int | None = None,
+            end_verse: int | None = None,
     ) -> list[Verse]:
         """
-        Retrieve a continuous list of verses between two reference points.
+        Synchronously return a continuous selection of verses between two points.
+
+        Can be called with string references or explicit numeric arguments:
+
+            get_selection("John 3:16", "John 5:1")
+
+            get_selection(
+                start_book="John", start_chapter=3, start_verse=16,
+                end_book="John", end_chapter=5, end_verse=1)
+
+        :param start_ref: Optional string reference for the start (e.g., "John 3:16").
+        :param end_ref: Optional string reference for the end (e.g., "John 5:1").
+        :param start_book: Start book name if using numeric mode.
+        :param start_chapter: Start chapter number.
+        :param start_verse: Start verse number.
+        :param end_book: End book name if using numeric mode.
+        :param end_chapter: End chapter number.
+        :param end_verse: End verse number.
+        :returns: list[Verse]: A list of `Verse` objects covering the inclusive range.
+        """
+        if start_ref and end_ref:
+            start_book, start_chapter, start_verse = self._parse_ref(start_ref)
+            end_book, end_chapter, end_verse = self._parse_ref(end_ref)
+
+        return _run_async(
+            self._aget_selection_range(start_book, start_chapter, start_verse, end_book, end_chapter, end_verse))
+
+    @abstractmethod
+    def _aget_selection_range(
+            self,
+            start_book: str,
+            start_chapter: int,
+            start_verse: int,
+            end_book: str,
+            end_chapter: int,
+            end_verse: int,
+    ) -> list[Verse]:
+        """
+        Asynchronously retrieve a continuous list of verses between two reference points.
 
         This method must be implemented by subclasses to define
         how verses are loaded or generated internally.
 
-        Args:
-            start_book (str): Name of the starting book.
-            start_chapter (int): Starting chapter number.
-            start_verse (int): Starting verse number.
-            end_book (str): Name of the ending book.
-            end_chapter (int): Ending chapter number.
-            end_verse (int): Ending verse number.
-
-        Returns:
-            list[Verse]: Ordered list of all `Verse` objects in the range.
+        :param start_book: Name of the starting book.
+        :param start_chapter: Starting chapter number.
+        :param start_verse: Starting verse number.
+        :param end_book: Name of the ending book.
+        :param end_chapter: Ending chapter number.
+        :param end_verse: Ending verse number.
+        :returns: list[Verse]: Ordered list of all `Verse` objects in the range.
         """
         raise NotImplementedError
 
