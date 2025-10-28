@@ -12,8 +12,3 @@ if TYPE_CHECKING:
 class Chapter:
     number: int
     verses: list[Verse]
-    book: "Book"
-
-    @property
-    def translation(self) -> "Translation":
-        return self.book.translation

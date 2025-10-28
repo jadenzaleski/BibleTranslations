@@ -11,15 +11,6 @@ if TYPE_CHECKING:
 class Verse:
     number: int
     text: str
-    chapter: "Chapter"
     heading: str | None = None
     superscription: str | None = None
     footnotes: list[str] | None = None
-
-    @property
-    def book(self) -> "Book":
-        return self.chapter.book
-
-    @property
-    def translation(self) -> "Translation":
-        return self.chapter.book.translation

@@ -11,4 +11,3 @@ if TYPE_CHECKING:
 class Book:
     name: str
     chapters: list[Chapter]
-    translation: "Translation"
