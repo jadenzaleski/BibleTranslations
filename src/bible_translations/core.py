@@ -1,2 +1,5 @@
+from bible_translations.utils.logger import logger
+
+
 def main():
-    print("Fetching Bible translations...")
+    logger.info("main()")
