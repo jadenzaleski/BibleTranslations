@@ -5,6 +5,7 @@ from bible_translations.constants import DEFAULT_BOOK_CHAPTER_COUNTS
 from bible_translations.models.book import Book
 from bible_translations.models.chapter import Chapter
 from bible_translations.models.verse import Verse
+from bible_translations.utils.logger import logger
 
 
 def _run_async(coro):
@@ -106,7 +107,7 @@ class Translation(ABC):
         """
         raise NotImplementedError
 
-    async def get_verse(self, book_name: str, chapter_number: int, verse_number: int) -> Verse:
+    def get_verse(self, book_name: str, chapter_number: int, verse_number: int) -> Verse:
         """
         Synchronously return a single verse by book, chapter, and verse number.
 
@@ -130,7 +131,7 @@ class Translation(ABC):
         end_book: str | None = None,
         end_chapter: int | None = None,
         end_verse: int | None = None,
-    ) -> list[Verse]:
+    ) -> list[Book]:
         """
         Asynchronously return a continuous selection of verses between two points.
 
@@ -152,13 +153,25 @@ class Translation(ABC):
         :param end_verse: End verse number.
         :returns: list[Verse]: A list of `Verse` objects covering the inclusive range.
         """
-        if start_ref and end_ref:
+
+        if self._is_selection_mode_ref(
+            start_ref,
+            end_ref,
+            start_book=start_book,
+            start_chapter=start_chapter,
+            start_verse=start_verse,
+            end_book=end_book,
+            end_chapter=end_chapter,
+            end_verse=end_verse,
+        ):
             start_book, start_chapter, start_verse = self._parse_ref(start_ref)
             end_book, end_chapter, end_verse = self._parse_ref(end_ref)
 
-        return self._aget_selection_range(start_book, start_chapter, start_verse, end_book, end_chapter, end_verse)
+        return await self._aget_selection_range(
+            start_book, start_chapter, start_verse, end_book, end_chapter, end_verse
+        )
 
-    async def get_selection(
+    def get_selection(
         self,
         start_ref: str | None = None,
         end_ref: str | None = None,
@@ -169,7 +182,7 @@ class Translation(ABC):
         end_book: str | None = None,
         end_chapter: int | None = None,
         end_verse: int | None = None,
-    ) -> list[Verse]:
+    ) -> list[Book]:
         """
         Synchronously return a continuous selection of verses between two points.
 
@@ -191,7 +204,17 @@ class Translation(ABC):
         :param end_verse: End verse number.
         :returns: list[Verse]: A list of `Verse` objects covering the inclusive range.
         """
-        if start_ref and end_ref:
+
+        if self._is_selection_mode_ref(
+            start_ref,
+            end_ref,
+            start_book=start_book,
+            start_chapter=start_chapter,
+            start_verse=start_verse,
+            end_book=end_book,
+            end_chapter=end_chapter,
+            end_verse=end_verse,
+        ):
             start_book, start_chapter, start_verse = self._parse_ref(start_ref)
             end_book, end_chapter, end_verse = self._parse_ref(end_ref)
 
@@ -200,7 +223,7 @@ class Translation(ABC):
         )
 
     @abstractmethod
-    def _aget_selection_range(
+    async def _aget_selection_range(
         self,
         start_book: str,
         start_chapter: int,
@@ -208,7 +231,7 @@ class Translation(ABC):
         end_book: str,
         end_chapter: int,
         end_verse: int,
-    ) -> list[Verse]:
+    ) -> list[Book]:
         """
         Asynchronously retrieve a continuous list of verses between two reference points.
 
@@ -226,19 +249,49 @@ class Translation(ABC):
         raise NotImplementedError
 
     @staticmethod
-    def _parse_ref(self, ref: str) -> tuple[str, int, int]:
+    def _parse_ref(ref: str) -> tuple[str, int, int]:
         """
         Parse a string reference into components.
 
         Example:
             "John 3:16" → ("John", 3, 16)
 
-        Args:
-            ref (str): Reference string formatted as "Book Chapter:Verse".
+        :param ref (str): Reference string formatted as "Book Chapter:Verse".
 
-        Returns:
-            tuple[str, int, int]: (book_name, chapter_number, verse_number)
+        :returns: tuple[str, int, int]: (book_name, chapter_number, verse_number)
         """
         book, rest = ref.split(" ", 1)
         chapter, verse = rest.split(":")
         return book, int(chapter), int(verse)
+
+    @staticmethod
+    def _is_selection_mode_ref(
+        start_ref: str | None = None,
+        end_ref: str | None = None,
+        *,
+        start_book: str | None = None,
+        start_chapter: int | None = None,
+        start_verse: int | None = None,
+        end_book: str | None = None,
+        end_chapter: int | None = None,
+        end_verse: int | None = None,
+    ):
+        mode_ref = start_ref is not None and end_ref is not None
+
+        mode_parts = (
+            start_book is not None
+            and start_chapter is not None
+            and start_verse is not None
+            and end_book is not None
+            and end_chapter is not None
+            and end_verse is not None
+        )
+
+        if not (mode_ref or mode_parts):
+            raise ValueError("Provide either start_ref and end_ref or all six granular fields.")
+
+        if mode_ref and mode_parts:
+            raise ValueError("Provide either reference mode or granular mode, not both.")
+
+        logger.debug(f"Selection mode ref: {mode_ref}")
+        return mode_ref
