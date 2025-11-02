@@ -1,6 +1,6 @@
 import asyncio
 
-from bible_translations.exceptions import VerseNotFoundError, ChapterNotFoundError, BookNotFoundError
+from bible_translations.exceptions import BookNotFoundError, ChapterNotFoundError, VerseNotFoundError
 from bible_translations.models.book import Book
 from bible_translations.models.chapter import Chapter
 from bible_translations.models.verse import Verse
@@ -16,10 +16,7 @@ class KJV(Translation):
 
     async def aget_books(self) -> list[Book]:
         async with BibleGatewayClient() as client:
-            tasks = [
-                asyncio.create_task(self.aget_book(name, client))
-                for name in self.books
-            ]
+            tasks = [asyncio.create_task(self.aget_book(name, client)) for name in self.books]
             for i, (name, task) in enumerate(zip(self.books, tasks), 1):
                 task.add_done_callback(
                     lambda x, book=name, idx=i: logger.debug(f"[{idx}] Completed fetching book: {book}")
@@ -41,8 +38,9 @@ class KJV(Translation):
         if client is None:
             async with BibleGatewayClient() as new_client:
                 # Grab them all at the same time
-                tasks = [asyncio.create_task(self.aget_chapter(name, i, new_client)) for i in
-                         range(1, chapter_count + 1)]
+                tasks = [
+                    asyncio.create_task(self.aget_chapter(name, i, new_client)) for i in range(1, chapter_count + 1)
+                ]
         else:
             # Grab them all at the same time
             tasks = [asyncio.create_task(self.aget_chapter(name, i, client)) for i in range(1, chapter_count + 1)]
@@ -55,8 +53,9 @@ class KJV(Translation):
         results.sort(key=lambda x: x.number)
         return Book(name=name, chapters=results)
 
-    async def aget_chapter(self, book_name: str, chapter_number: int,
-                           client: BibleGatewayClient | None = None) -> Chapter:
+    async def aget_chapter(
+        self, book_name: str, chapter_number: int, client: BibleGatewayClient | None = None
+    ) -> Chapter:
         query = f"{book_name}+{chapter_number}&version={self.abbreviation}"
         logger.debug(f"Query: {query}")
 
@@ -90,8 +89,9 @@ class KJV(Translation):
 
         return Chapter(number=chapter_number, verses=verses)
 
-    async def aget_verse(self, book_name: str, chapter_number: int, verse_number: int,
-                         client: BibleGatewayClient | None = None) -> Verse:
+    async def aget_verse(
+        self, book_name: str, chapter_number: int, verse_number: int, client: BibleGatewayClient | None = None
+    ) -> Verse:
         # Build the query part of the URL
         query = f"{book_name}+{chapter_number}:{verse_number}&version={self.abbreviation}"
         logger.debug(f"Query: {query}")
@@ -119,8 +119,58 @@ class KJV(Translation):
 
         return Verse(number=verse_number, text=verse_text)
 
-    def _aget_selection_range(
-            self, start_book: str, start_chapter: int, start_verse: int, end_book: str, end_chapter: int,
-            end_verse: int, client: BibleGatewayClient | None = None
-    ) -> list[Verse]:
-        pass
+    async def _aget_selection_range(
+        self, start_book: str, start_chapter: int, start_verse: int, end_book: str, end_chapter: int, end_verse: int
+    ) -> list[Book]:
+        async with BibleGatewayClient() as client:
+            # Ensure start book
+            if start_book not in self.books:
+                raise BookNotFoundError(f"Book not found: {start_book}")
+            # Ensure end book
+            if end_book not in self.books:
+                raise BookNotFoundError(f"Book not found: {end_book}")
+            # Ensure the end book is the same as or after the start book
+            if end_book != start_book and self.books.index(end_book) < self.books.index(start_book):
+                raise ValueError(f"End book must be the same as or after the start book: {start_book} -> {end_book}")
+
+            # Get a list of books between the start and end book, inclusive
+            required_books_list = self.books[self.books.index(start_book) : self.books.index(end_book) + 1]
+            logger.debug(f"Required books: {required_books_list}")
+
+            tasks = [asyncio.create_task(self.aget_book(book, client)) for book in required_books_list]
+            fetched_books = await asyncio.gather(*tasks)
+
+            # Now remove the unnecessary verses and chapters in the start and end books.
+            # Trim the start book
+            if start_book == end_book:
+                book = fetched_books[0]
+                trimmed_chapters = []
+                for c in book.chapters[start_chapter - 1 : end_chapter]:
+                    new_verses = []
+
+                    for v in c.verses:
+                        if c.number == start_chapter and v.number < start_verse:
+                            continue
+                        if c.number == end_chapter and v.number > end_verse:
+                            continue
+                        new_verses.append(v)
+
+                    trimmed_chapters.append(Chapter(number=c.number, verses=new_verses))
+                fetched_books[0] = Book(name=book.name, chapters=trimmed_chapters)
+            else:
+                # Multiple books
+                # Trim start book
+                start_book_obj = fetched_books[0]
+                start_book_obj.chapters = [
+                    Chapter(number=c.number, verses=[v for v in c.verses if v.number >= start_verse])
+                    for c in start_book_obj.chapters[start_chapter - 1 :]
+                ]
+
+                # Trim end book
+                end_book_obj = fetched_books[-1]
+                end_book_obj.chapters = [
+                    Chapter(number=c.number, verses=[v for v in c.verses if v.number <= end_verse])
+                    for c in end_book_obj.chapters[:end_chapter]
+                ]
+
+            return fetched_books
