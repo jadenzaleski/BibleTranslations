@@ -1,9 +1,12 @@
 import asyncio
 from contextlib import nullcontext
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from bible_translations.exceptions import BookNotFoundError, ChapterNotFoundError, VerseNotFoundError
 from bible_translations.models.book import Book
 from bible_translations.models.chapter import Chapter
+from bible_translations.models.info import Info
 from bible_translations.models.verse import Verse
 from bible_translations.translations.base import Translation
 from bible_translations.utils.fetch.bible_gateway import BibleGatewayClient
@@ -135,7 +138,17 @@ class BibleGatewayTranslation(Translation):
             results = await asyncio.gather(*tasks)
 
         results.sort(key=lambda x: x.number)
-        return Book(name=canonical_name, chapters=results)
+
+        info = Info(
+            translation=self.name,
+            abbreviation=self.abbreviation,
+            language=self.language,
+            copyright=self.copyright,
+            url=self.url,
+            fetch_date=datetime.now(tz=ZoneInfo("UTC")).isoformat()
+        )
+
+        return Book(name=canonical_name, chapters=results, info=info)
 
     async def aget_chapter(
         self, book_name: str, chapter_number: int, client: BibleGatewayClient | None = None
@@ -212,12 +225,13 @@ class BibleGatewayTranslation(Translation):
             raise VerseNotFoundError(f"Verse not found: {book_name} {chapter_number}:{verse_number}")
 
         # Remove any nested content like chapter/verse numbers
-        extra_content = verse_span.select(".chapternum, .versenum")
-        if extra_content:
-            for element in extra_content:
-                element.decompose()
+        for element in verse_span.select(".chapternum, .versenum"):
+            element.decompose()
 
-        verse_text = verse_span.get_text(strip=True)
+        for sc in verse_span.select("span.small-caps"):
+            sc.replace_with(sc.get_text())
+
+        verse_text = verse_span.get_text()
         return Verse(number=verse_number, text=verse_text)
 
     async def _aget_selection_range(

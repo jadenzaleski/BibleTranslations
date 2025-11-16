@@ -7,3 +7,4 @@ dist/
 .ruff_cache/
 *.egg-info/
 build
+/exports/

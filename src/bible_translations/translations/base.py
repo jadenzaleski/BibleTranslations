@@ -33,6 +33,7 @@ class Translation(ABC):
     abbreviation: str
     copyright: str
     language: str = "English"
+    url: str | None = None
     books: list[str] = list(DEFAULT_BOOK_CHAPTER_COUNTS.keys())
     book_chapter_counts: dict[str, int] = DEFAULT_BOOK_CHAPTER_COUNTS
 

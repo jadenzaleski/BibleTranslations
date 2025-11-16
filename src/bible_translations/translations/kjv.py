@@ -11,3 +11,4 @@ class KJV(BibleGatewayTranslation):
     name = "King James Version"
     abbreviation = "KJV"
     copyright = "Public Domain"
+    url = "https://www.biblegateway.com"

@@ -1,3 +1,5 @@
+import logging
+
 import pytest
 
 from bible_translations.exceptions import BookNotFoundError, ChapterNotFoundError, VerseNotFoundError
@@ -14,6 +16,19 @@ async def test_aget_verse_john_3_16():
         " perish, but have everlasting life." == verse.text
     )
     assert verse.number == 16
+
+@pytest.mark.asyncio
+async def test_aget_verse_amos_9_8():
+    logging.basicConfig(level=logging.DEBUG, force=True)
+    kjv = KJV()
+    verse = await kjv.aget_verse(book_name="Amos", chapter_number=9, verse_number=8)
+    # https://www.biblegateway.com/passage/?search=Amos%209%3A8&version=KJV
+    # Testing this to make sure we handle the small-caps calss properly.
+    assert (
+        "Behold, the eyes of the Lord God are upon the sinful kingdom, and I will destroy it from off the face of the"
+        " earth; saving that I will not utterly destroy the house of Jacob, saith the Lord." == verse.text
+    )
+    assert verse.number == 8
 
 
 @pytest.mark.asyncio

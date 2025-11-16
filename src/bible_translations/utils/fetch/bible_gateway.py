@@ -4,6 +4,7 @@ import aiohttp
 from bs4 import BeautifulSoup
 
 from bible_translations.constants import BIBLE_GATEWAY_BASE_URL
+from bible_translations.utils.logger import logger
 
 
 class BibleGatewayClient:
@@ -25,6 +26,7 @@ class BibleGatewayClient:
         if not self.session:
             raise RuntimeError("Session not initialized. Use async context manager.")
         url = f"{BIBLE_GATEWAY_BASE_URL}?search={query}"
+        logger.debug(f"URL: {url}")
         async with self.session.get(url) as resp:
             if resp.status != 200:
                 raise RuntimeError(f"HTTP {resp.status} when fetching: {url}")
