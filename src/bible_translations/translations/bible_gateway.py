@@ -130,9 +130,7 @@ class BibleGatewayTranslation(Translation):
         async with client_to_use if client is None else nullcontext() as session_client:
             client_for_tasks = session_client if client is None else client
             tasks = [
-                asyncio.create_task(
-                    self._with_sem(sem, run, i, client_for_tasks) if sem else run(i, client_for_tasks)
-                )
+                asyncio.create_task(self._with_sem(sem, run, i, client_for_tasks) if sem else run(i, client_for_tasks))
                 for i in range(1, chapter_count + 1)
             ]
             results = await asyncio.gather(*tasks)
@@ -145,7 +143,7 @@ class BibleGatewayTranslation(Translation):
             language=self.language,
             copyright=self.copyright,
             url=self.url,
-            fetch_date=datetime.now(tz=ZoneInfo("UTC")).isoformat()
+            fetch_date=datetime.now(tz=ZoneInfo("UTC")).isoformat(),
         )
 
         return Book(name=canonical_name, chapters=results, info=info)
@@ -257,9 +255,7 @@ class BibleGatewayTranslation(Translation):
             end_book_c = self._normalize_book_name(end_book)
 
             if end_book_c != start_book_c and self.books.index(end_book_c) < self.books.index(start_book_c):
-                raise ValueError(
-                    f"End book must be the same as or after the start book: {start_book} -> {end_book}"
-                )
+                raise ValueError(f"End book must be the same as or after the start book: {start_book} -> {end_book}")
 
             required_books_list = self.books[self.books.index(start_book_c) : self.books.index(end_book_c) + 1]
             logger.debug(f"Required books: {required_books_list}")
@@ -300,7 +296,7 @@ class BibleGatewayTranslation(Translation):
                 end_book_obj = fetched_books[-1]
                 end_book_obj.chapters = [
                     Chapter(number=c.number, verses=[v for v in c.verses if v.number <= end_verse])
-                    for c in end_book_obj.chapters[: end_chapter]
+                    for c in end_book_obj.chapters[:end_chapter]
                 ]
 
             return fetched_books

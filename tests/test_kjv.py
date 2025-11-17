@@ -17,6 +17,7 @@ async def test_aget_verse_john_3_16():
     )
     assert verse.number == 16
 
+
 @pytest.mark.asyncio
 async def test_aget_verse_amos_9_8():
     logging.basicConfig(level=logging.DEBUG, force=True)
