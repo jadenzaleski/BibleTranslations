@@ -1,8 +1,9 @@
 name: Lint
 
 on:
+  workflow_dispatch:
   push:
-    branches: [main]
+    branches: [master, development]
   pull_request:
 
 jobs:
