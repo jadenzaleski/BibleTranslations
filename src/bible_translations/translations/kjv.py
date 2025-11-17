@@ -8,6 +8,7 @@ class KJV(BibleGatewayTranslation):
     Inherits all retrieval methods from BibleGatewayTranslation so that the
     scraping logic is shared across translations.
     """
+
     name = "King James Version"
     abbreviation = "KJV"
     copyright = "Public Domain"

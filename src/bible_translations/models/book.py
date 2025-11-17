@@ -9,4 +9,3 @@ class Book:
     name: str
     chapters: list[Chapter]
     info: Info | None = None
-
