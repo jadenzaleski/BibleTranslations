@@ -3,10 +3,10 @@ name = "bible-translations"
 version = "0.1.0"
 description = "A package to fetch and provide you all the Bible translations available on the internet."
 authors = [
-    { name="Example Author", email="author@example.com" },
+    { name="Jaden Zaleski", email="jadenzaleski@icloud.com" },
 ]
 maintainers = [
-    { name="Example Author", email="author@example.com" },
+    { name="Jaden Zaleski", email="jadenzaleski@icloud.com" },
 ]
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.14"
