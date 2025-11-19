@@ -54,6 +54,7 @@ where = ["src"]
 dev = [
     "pytest",
     "ruff",
+    "aiohttp"
 ]
 
 [tool.pytest.ini_options]
