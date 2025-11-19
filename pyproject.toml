@@ -53,6 +53,7 @@ where = ["src"]
 [project.optional-dependencies]
 dev = [
     "pytest",
+    "pytest-asyncio",
     "ruff",
     "aiohttp",
     "beautifulsoup4",
