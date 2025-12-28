@@ -40,24 +40,26 @@ class Translation(ABC):
     # ---------- Retrieval methods ----------
 
     @abstractmethod
-    async def aget_books(self) -> list[Book]:
+    async def aget_books(self, on_book_complete=None) -> list[Book]:
         """
         Asynchronously return all books available in this translation.
 
+        :param on_book_complete: Callback function to invoke after each book is loaded.
         :returns: list[Book]: A list of all `Book` objects for the translation.
         """
         raise NotImplementedError
 
-    def get_books(self) -> list[Book]:
+    def get_books(self, on_book_complete=None) -> list[Book]:
         """
         Synchronously return all books available in this translation.
 
+        :param on_book_complete: Callback function to invoke after each book is loaded.
         :returns: list[Book]: A list of all `Book` objects for the translation.
         """
-        return _run_async(self.aget_books())
+        return _run_async(self.aget_books(on_book_complete=on_book_complete))
 
     @abstractmethod
-    async def aget_book(self, name: str, *, on_chapter_complete = None) -> Book:
+    async def aget_book(self, name: str, *, on_chapter_complete=None) -> Book:
         """
         Asynchronously return a single book by name.
 
@@ -67,7 +69,7 @@ class Translation(ABC):
         """
         raise NotImplementedError
 
-    def get_book(self, name: str, *, on_chapter_complete = None) -> Book:
+    def get_book(self, name: str, *, on_chapter_complete=None) -> Book:
         """
         Synchronously return a single book by name.
 
@@ -295,13 +297,13 @@ class Translation(ABC):
 
         if not rest:
             # Only book name provided, default to chapter 1, verse 1
-            return book, -1, -1
+            return book, 1, 1
         elif ":" in rest:
             chapter, verse = rest.split(":")
             return book, int(chapter), int(verse)
         else:
             # Only chapter provided, default verse to -1
-            return book, int(rest), -1
+            return book, int(rest), 1
 
     @staticmethod
     def _is_selection_mode_ref(

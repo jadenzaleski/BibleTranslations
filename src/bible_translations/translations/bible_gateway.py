@@ -77,11 +77,12 @@ class BibleGatewayTranslation(Translation):
         async with sem:
             return await coro_func(*args, **kwargs)
 
-    async def aget_books(self) -> list[Book]:
+    async def aget_books(self, on_book_complete=None) -> list[Book]:
         """
         Asynchronously return all books available in this translation by fetching
         each book concurrently using a single shared HTTP session.
 
+        :param on_book_complete: Optional callback function to invoke after each book is loaded.
         :returns: list[Book]: A list of all `Book` objects for the translation.
         """
         async with BibleGatewayClient() as client:
@@ -95,9 +96,13 @@ class BibleGatewayTranslation(Translation):
 
             tasks = [asyncio.create_task(run(name)) for name in names]
             for i, (name, task) in enumerate(zip(names, tasks), 1):
-                task.add_done_callback(
-                    lambda x, book=name, idx=i: logger.debug(f"[{idx}] Completed fetching book: {book}")
-                )
+
+                def callback(x, book=name, idx=i):
+                    logger.debug(f"[{idx}] Completed fetching book: {book}")
+                    if on_book_complete:
+                        on_book_complete()
+
+                task.add_done_callback(callback)
 
             results = await asyncio.gather(*tasks)
             results_by_book = dict(zip(names, results))
@@ -306,7 +311,7 @@ class BibleGatewayTranslation(Translation):
                     name=start_book_obj.name,
                     chapters=[
                         Chapter(number=c.number, verses=[v for v in c.verses if v.number >= start_verse])
-                        for c in start_book_obj.chapters[start_chapter - 1:]
+                        for c in start_book_obj.chapters[start_chapter - 1 :]
                     ],
                     info=info,
                 )

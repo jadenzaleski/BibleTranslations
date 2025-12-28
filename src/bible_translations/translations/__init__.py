@@ -4,6 +4,7 @@ TRANSLATIONS = {
     "KJV": KJV,
 }
 
+
 def get_translation(abbreviation: str):
     """
     Get a translation class by its abbreviation.

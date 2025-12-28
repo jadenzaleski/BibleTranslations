@@ -1,11 +1,9 @@
-import asyncio
 from datetime import datetime
-from time import sleep
 from zoneinfo import ZoneInfo
 
 import click
 from rich.console import Console
-from rich.progress import BarColumn, Progress, SpinnerColumn, TaskProgressColumn, TextColumn, TimeElapsedColumn
+from rich.progress import BarColumn, Progress, SpinnerColumn, TaskProgressColumn, TextColumn
 
 from bible_translations.constants import SUPPORTED_FORMATS, VERSION
 from bible_translations.models.book import Book
@@ -13,7 +11,6 @@ from bible_translations.models.chapter import Chapter
 from bible_translations.models.info import Info
 from bible_translations.translations import TRANSLATIONS, get_translation
 from bible_translations.utils.exporter import Exporter
-from bible_translations.utils.fetch.bible_gateway import BibleGatewayClient
 
 console = Console()
 
@@ -27,9 +24,9 @@ def cli():
     pass
 
 
-def run_export(books, output_file, file_format):
+def run_export(book_list, output_file, file_format):
     exporter = Exporter()
-    return exporter.export(books, file_format=file_format, folder_name=output_file)
+    return exporter.export(book_list, file_format=file_format, folder_name=output_file)
 
 
 def get_translation_instance(name):
@@ -37,6 +34,7 @@ def get_translation_instance(name):
         return get_translation(name)
     except ValueError as e:
         console.print(f"[red]Error:[/red] {e}")
+        console.print_exception()
         raise click.Abort()
 
 
@@ -47,7 +45,7 @@ def get_translation_instance(name):
     "-o",
     "output_file",
     type=click.Path(writable=True),
-    help="Output file path. Default is generated with date."
+    help="Output file path. Default is generated with date.",
 )
 @click.option(
     "--format",
@@ -56,7 +54,7 @@ def get_translation_instance(name):
     default="json",
     type=click.Choice(SUPPORTED_FORMATS, case_sensitive=False),
     show_default=True,
-    help="Output format."
+    help="Output format.",
 )
 @click.option(
     "--translation",
@@ -64,8 +62,10 @@ def get_translation_instance(name):
     default="KJV",
     type=click.Choice(list(TRANSLATIONS.keys()), case_sensitive=False),
     show_default=True,
-    help="Bible translation to use.")
-def verse(reference, output_file, file_format, translation):
+    help="Bible translation to use.",
+)
+@click.option("--verbose", "-v", is_flag=True, help="Show verbose output.")
+def verse(reference, output_file, file_format, translation, verbose):
     """Fetch and export a specific verse (e.g., 'John 3:16')."""
     translation_obj = get_translation_instance(translation)
     try:
@@ -75,9 +75,7 @@ def verse(reference, output_file, file_format, translation):
         book_name, chapter_num, verse_num = translation_obj.parse_ref(reference)
 
         with Progress(
-                customSpinner,
-            TextColumn("[progress.description]{task.description}"),
-            console=console
+            customSpinner, TextColumn("[progress.description]{task.description}"), console=console
         ) as progress:
             fetch_task = progress.add_task(description=f"Fetching {reference}...", total=1)
             verse_obj = translation_obj.get_verse(book_name, chapter_num, verse_num)
@@ -90,17 +88,21 @@ def verse(reference, output_file, file_format, translation):
                 url=translation_obj.url,
                 fetch_date=datetime.now(tz=ZoneInfo("UTC")).isoformat(),
             )
-            chapter = Chapter(number=chapter_num, verses=[verse_obj])
-            book = Book(name=book_name, chapters=[chapter], info=info)
+            chapter_obj = Chapter(number=chapter_num, verses=[verse_obj])
+            book_obj = Book(name=book_name, chapters=[chapter_obj], info=info)
             progress.update(fetch_task, advance=1, description=f"Fetched {book_name} {chapter_num}:{verse_num}")
 
             export_task = progress.add_task(description="Exporting...", total=1)
-            output_path = run_export([book], output_file, file_format)
+            output_path = run_export([book_obj], output_file, file_format)
             progress.update(export_task, advance=1, description=f"Exported {book_name} {chapter_num}:{verse_num}")
 
-        console.print(f"[green]Successfully exported [bold]{book_name} {chapter_num}:{verse_num}[/bold] to {output_path}[/green]")
+        console.print(
+            f"[green]Successfully exported [bold]{book_name} {chapter_num}:{verse_num}[/bold] to {output_path}[/green]"
+        )
     except Exception as e:
         console.print(f"[red]Error:[/red] {e}")
+        if verbose:
+            console.print_exception()
         raise click.Abort()
 
 
@@ -111,7 +113,7 @@ def verse(reference, output_file, file_format, translation):
     "-o",
     "output_file",
     type=click.Path(writable=True),
-    help="Output file path. Default is generated with date."
+    help="Output file path. Default is generated with date.",
 )
 @click.option(
     "--format",
@@ -120,7 +122,7 @@ def verse(reference, output_file, file_format, translation):
     default="json",
     type=click.Choice(SUPPORTED_FORMATS, case_sensitive=False),
     show_default=True,
-    help="Output format."
+    help="Output format.",
 )
 @click.option(
     "--translation",
@@ -128,8 +130,10 @@ def verse(reference, output_file, file_format, translation):
     default="KJV",
     type=click.Choice(list(TRANSLATIONS.keys()), case_sensitive=False),
     show_default=True,
-    help="Bible translation to use.")
-def chapter(reference, output_file, file_format, translation):
+    help="Bible translation to use.",
+)
+@click.option("--verbose", "-v", is_flag=True, help="Show verbose output.")
+def chapter(reference, output_file, file_format, translation, verbose):
     """Fetch and export a specific chapter (e.g., 'John 3')."""
     translation_obj = get_translation_instance(translation)
     try:
@@ -139,8 +143,7 @@ def chapter(reference, output_file, file_format, translation):
         book_name, chapter_num, verse_num = translation_obj.parse_ref(reference)
 
         with Progress(
-                customSpinner,
-                TextColumn("[progress.description]{task.description}"), console=console
+            customSpinner, TextColumn("[progress.description]{task.description}"), console=console
         ) as progress:
             fetch_task = progress.add_task(description=f"Fetching {reference}...", total=1)
             chapter_obj = translation_obj.get_chapter(book_name, chapter_num)
@@ -153,16 +156,18 @@ def chapter(reference, output_file, file_format, translation):
                 url=translation_obj.url,
                 fetch_date=datetime.now(tz=ZoneInfo("UTC")).isoformat(),
             )
-            book = Book(name=book_name, chapters=[chapter_obj], info=info)
+            book_obj = Book(name=book_name, chapters=[chapter_obj], info=info)
             progress.update(fetch_task, advance=1, description=f"Fetched {book_name} {chapter_num}")
 
             export_task = progress.add_task(description="Exporting...", total=1)
-            output_path = run_export([book], output_file, file_format)
+            output_path = run_export([book_obj], output_file, file_format)
             progress.update(export_task, advance=1, description=f"Exported {book_name} {chapter_num}")
 
         console.print(f"[green]Successfully exported [bold]{book_name} {chapter_num}[/bold] to {output_path}[/green]")
     except Exception as e:
         console.print(f"[red]Error:[/red] {e}")
+        if verbose:
+            console.print_exception()
         raise click.Abort()
 
 
@@ -173,7 +178,7 @@ def chapter(reference, output_file, file_format, translation):
     "-o",
     "output_file",
     type=click.Path(writable=True),
-    help="Output file path. Default is generated with date."
+    help="Output file path. Default is generated with date.",
 )
 @click.option(
     "--format",
@@ -182,7 +187,7 @@ def chapter(reference, output_file, file_format, translation):
     default="json",
     type=click.Choice(SUPPORTED_FORMATS, case_sensitive=False),
     show_default=True,
-    help="Output format."
+    help="Output format.",
 )
 @click.option(
     "--translation",
@@ -190,8 +195,10 @@ def chapter(reference, output_file, file_format, translation):
     default="KJV",
     type=click.Choice(list(TRANSLATIONS.keys()), case_sensitive=False),
     show_default=True,
-    help="Bible translation to use.")
-def book(book_name, output_file, file_format, translation):
+    help="Bible translation to use.",
+)
+@click.option("--verbose", "-v", is_flag=True, help="Show verbose output.")
+def book(book_name, output_file, file_format, translation, verbose):
     """Fetch and export a specific book (e.g., 'John')."""
     translation_obj = get_translation_instance(translation)
     try:
@@ -207,10 +214,9 @@ def book(book_name, output_file, file_format, translation):
 
             fetch_task = progress.add_task(f"Fetching {normalized_book_name}", total=chapter_count)
             book_obj = translation_obj.get_book(
-                name=book_name,
-                on_chapter_complete=lambda: progress.update(fetch_task, advance=1)
+                name=book_name, on_chapter_complete=lambda: progress.update(fetch_task, advance=1)
             )
-            progress.update(fetch_task, advance=chapter_count, description=f"Fetched {normalized_book_name}")
+            progress.update(fetch_task, completed=chapter_count, description=f"Fetched {normalized_book_name}")
 
             export_task = progress.add_task(description="Exporting...", total=None)
             output_path = run_export([book_obj], output_file, file_format)
@@ -219,7 +225,8 @@ def book(book_name, output_file, file_format, translation):
         console.print(f"[green]Successfully exported [bold]{normalized_book_name}[/bold] to {output_path}[/green]")
     except Exception as e:
         console.print(f"[red]Error:[/red] {e}")
-        console.print_exception()
+        if verbose:
+            console.print_exception()
         raise click.Abort()
 
 
@@ -229,7 +236,7 @@ def book(book_name, output_file, file_format, translation):
     "-o",
     "output_file",
     type=click.Path(writable=True),
-    help="Output file path. Default is generated with date."
+    help="Output file path. Default is generated with date.",
 )
 @click.option(
     "--format",
@@ -238,7 +245,7 @@ def book(book_name, output_file, file_format, translation):
     default="json",
     type=click.Choice(SUPPORTED_FORMATS, case_sensitive=False),
     show_default=True,
-    help="Output format."
+    help="Output format.",
 )
 @click.option(
     "--translation",
@@ -246,38 +253,38 @@ def book(book_name, output_file, file_format, translation):
     default="KJV",
     type=click.Choice(list(TRANSLATIONS.keys()), case_sensitive=False),
     show_default=True,
-    help="Bible translation to use.")
-def books_cmd(output_file, file_format, translation):
+    help="Bible translation to use.",
+)
+@click.option("--verbose", "-v", is_flag=True, help="Show verbose output.")
+def books(output_file, file_format, translation, verbose):
     """Fetch and export all books."""
     translation_obj = get_translation_instance(translation)
     try:
-        all_books = []
         with Progress(
-            SpinnerColumn(),
+            customSpinner,
             TextColumn("[progress.description]{task.description}"),
             BarColumn(),
             TaskProgressColumn(),
             console=console,
         ) as progress:
-            task = progress.add_task("Fetching all books...", total=len(translation_obj.books))
+            book_count = len(translation_obj.books)
+            fetch_task = progress.add_task(f"Fetching {book_count} books", total=book_count)
 
-            async def fetch_all():
-                async with BibleGatewayClient() as client:
-                    tasks = [translation_obj.aget_book(name, client=client) for name in translation_obj.books]
-                    for completed in asyncio.as_completed(tasks):
-                        book_obj = await completed
-                        all_books.append(book_obj)
-                        progress.update(task, advance=1, description=f"Fetched {book_obj.name}")
-                all_books.sort(key=lambda b: translation_obj.books.index(b.name))
+            books_obj = translation_obj.get_books(on_book_complete=lambda: progress.update(fetch_task, advance=1))
 
-            asyncio.run(fetch_all())
+            progress.update(fetch_task, completed=book_count, description=f"Fetched {book_count} books")
 
-            progress.add_task(description="Exporting...", total=None)
-            output_path = run_export(all_books, output_file, file_format)
+            export_task = progress.add_task(description="Exporting...", total=None)
+            output_path = run_export(books_obj, output_file, file_format)
+            progress.update(export_task, total=1, completed=1, description=f"Exported {book_count} books")
 
-        console.print(f"[green]Successfully exported all books to {output_path}[/green]")
+        console.print(
+            f"[green]Successfully exported {book_count} {translation_obj.abbreviation} books to {output_path}[/green]"
+        )
     except Exception as e:
         console.print(f"[red]Error:[/red] {e}")
+        if verbose:
+            console.print_exception()
         raise click.Abort()
 
 
@@ -289,7 +296,7 @@ def books_cmd(output_file, file_format, translation):
     "-o",
     "output_file",
     type=click.Path(writable=True),
-    help="Output file path. Default is generated with date."
+    help="Output file path. Default is generated with date.",
 )
 @click.option(
     "--format",
@@ -298,7 +305,7 @@ def books_cmd(output_file, file_format, translation):
     default="json",
     type=click.Choice(SUPPORTED_FORMATS, case_sensitive=False),
     show_default=True,
-    help="Output format."
+    help="Output format.",
 )
 @click.option(
     "--translation",
@@ -306,28 +313,37 @@ def books_cmd(output_file, file_format, translation):
     default="KJV",
     type=click.Choice(list(TRANSLATIONS.keys()), case_sensitive=False),
     show_default=True,
-    help="Bible translation to use.")
-def selection(start_ref, end_ref, output_file, file_format, translation):
+    help="Bible translation to use.",
+)
+@click.option("--verbose", "-v", is_flag=True, help="Show verbose output.")
+def selection(start_ref, end_ref, output_file, file_format, translation, verbose):
     """Fetch and export a selection (e.g., 'John 3:16' 'John 3:17')."""
     translation_obj = get_translation_instance(translation)
     try:
         with Progress(
-            SpinnerColumn(), TextColumn("[progress.description]{task.description}"), console=console
+            customSpinner, TextColumn("[progress.description]{task.description}"), console=console
         ) as progress:
-            progress.add_task(description=f"Fetching selection from {start_ref} to {end_ref}...", total=None)
-            selection_books = asyncio.run(translation_obj.aget_selection(start_ref, end_ref))
+            fetch_task = progress.add_task(f"Fetching {start_ref} - {end_ref} ", total=None)
 
-            progress.add_task(description="Exporting...", total=None)
-            output_path = run_export(selection_books, output_file, file_format)
+            selection_obj = translation_obj.get_selection(start_ref, end_ref)
+
+            progress.update(fetch_task, completed=1, total=1, description=f"Fetched {start_ref} - {end_ref}")
+
+            export_task = progress.add_task(description="Exporting...", total=None)
+            output_path = run_export(selection_obj, output_file, file_format)
+            progress.update(export_task, total=1, completed=1, description=f"Exported {start_ref} - {end_ref}")
 
         console.print(f"[green]Successfully exported selection to {output_path}[/green]")
     except Exception as e:
         console.print(f"[red]Error:[/red] {e}")
+        if verbose:
+            console.print_exception()
         raise click.Abort()
 
 
 def main():
     cli()
+
 
 if __name__ == "__main__":
     main()
