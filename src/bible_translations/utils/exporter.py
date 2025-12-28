@@ -28,8 +28,8 @@ class Exporter:
     def export(
         self,
         books: List[Book],
-        file_format: Literal["json"] = "json",
-        compression: Literal[".tar.gz", ".tgz", ".zip"] = "zip",
+        file_format: str = "json",
+        compression: Literal[".tar.gz", ".tgz", ".zip"] = ".zip",
         folder_name: str | None = None,
     ) -> str:
         """
@@ -55,21 +55,24 @@ class Exporter:
             # Grab today's date and time
             date = datetime.now().strftime("%Y%m%d_%H%M%S")
             logger.debug("Date: %s", date)
-            # Create the parent folder if name is empty
+            # Create the assembly folder inside the temp directory
             if not folder_name:
                 abbreviation = book_info.abbreviation.lower() if book_info.abbreviation else "bt"
                 abbreviation += "_"
-                parent_folder = tempdir + "/" + abbreviation + file_format + "_export_" + date
+                assembly_folder = Path(tempdir) / f"{abbreviation}{file_format}_export_{date}"
             else:
-                parent_folder = folder_name
+                assembly_folder = Path(tempdir) / folder_name
 
-            Path(parent_folder).mkdir(exist_ok=False)
+            assembly_folder.mkdir(parents=True, exist_ok=True)
+            parent_folder = str(assembly_folder)
 
             # Create all the export files depending on parameters
             if file_format == "json":
                 self._export_json(books, parent_folder, book_info)
             elif file_format == "sql":
                 raise NotImplementedError("SQL export not implemented yet")
+            else:
+                raise ValueError(f"Unsupported file format: {file_format}")
 
             # compress and zip to finale location
             if compression in [".tar.gz", ".tgz"]:

@@ -1,3 +1,5 @@
+VERSION = "0.1.0"
+
 BIBLE_GATEWAY_BASE_URL = "https://www.biblegateway.com/passage/"
 
 DEFAULT_BOOK_CHAPTER_COUNTS = {
@@ -69,3 +71,5 @@ DEFAULT_BOOK_CHAPTER_COUNTS = {
     "Jude": 1,
     "Revelation": 22,
 }
+
+SUPPORTED_FORMATS = ["json"]

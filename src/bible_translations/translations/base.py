@@ -57,23 +57,25 @@ class Translation(ABC):
         return _run_async(self.aget_books())
 
     @abstractmethod
-    async def aget_book(self, name: str) -> Book:
+    async def aget_book(self, name: str, *, on_chapter_complete = None) -> Book:
         """
         Asynchronously return a single book by name.
 
         :param name: The book name (e.g., "Genesis", "John").
+        :param on_chapter_complete: Callback function to invoke after each chapter is loaded.
         :returns: Book: The corresponding `Book` object containing all chapters and verses.
         """
         raise NotImplementedError
 
-    def get_book(self, name: str) -> Book:
+    def get_book(self, name: str, *, on_chapter_complete = None) -> Book:
         """
         Synchronously return a single book by name.
 
         :param name: The book name (e.g., "Genesis", "John").
+        :param on_chapter_complete: Callback function to invoke after each chapter is loaded.
         :returns: Book: The corresponding `Book` object containing all chapters and verses.
         """
-        return _run_async(self.aget_book(name))
+        return _run_async(self.aget_book(name, on_chapter_complete=on_chapter_complete))
 
     @abstractmethod
     async def aget_chapter(self, book_name: str, chapter_number: int) -> Chapter:
@@ -165,8 +167,8 @@ class Translation(ABC):
             end_chapter=end_chapter,
             end_verse=end_verse,
         ):
-            start_book, start_chapter, start_verse = self._parse_ref(start_ref)
-            end_book, end_chapter, end_verse = self._parse_ref(end_ref)
+            start_book, start_chapter, start_verse = self.parse_ref(start_ref)
+            end_book, end_chapter, end_verse = self.parse_ref(end_ref)
 
         return await self._aget_selection_range(
             start_book, start_chapter, start_verse, end_book, end_chapter, end_verse
@@ -216,8 +218,8 @@ class Translation(ABC):
             end_chapter=end_chapter,
             end_verse=end_verse,
         ):
-            start_book, start_chapter, start_verse = self._parse_ref(start_ref)
-            end_book, end_chapter, end_verse = self._parse_ref(end_ref)
+            start_book, start_chapter, start_verse = self.parse_ref(start_ref)
+            end_book, end_chapter, end_verse = self.parse_ref(end_ref)
 
         return _run_async(
             self._aget_selection_range(start_book, start_chapter, start_verse, end_book, end_chapter, end_verse)
@@ -250,20 +252,56 @@ class Translation(ABC):
         raise NotImplementedError
 
     @staticmethod
-    def _parse_ref(ref: str) -> tuple[str, int, int]:
+    def parse_ref(ref: str) -> tuple[str, int, int]:
         """
         Parse a string reference into components.
 
         Example:
             "John 3:16" → ("John", 3, 16)
+            "1 John 3:16" → ("1 John", 3, 16)
+            "2 Kings 5:10" → ("2 Kings", 5, 10)
+            "Song of Solomon 2:1" → ("Song of Solomon", 2, 1)
+            "Song of Songs 2:1" → ("Song of Solomon", 2, 1)
+            "John 3" → ("John", 3, 1)
+            "1 Kings 6" → ("1 Kings", 6, 1)
+            "John" → ("John", 1, 1)
+            "Mark" → ("Mark", 1, 1)
+            "1 Kings" → ("1 Kings", 1, 1)
 
-        :param ref (str): Reference string formatted as "Book Chapter:Verse".
+        :param ref: Reference string formatted as "Book Chapter:Verse", "Book Chapter", or "Book".
 
         :returns: tuple[str, int, int]: (book_name, chapter_number, verse_number)
         """
-        book, rest = ref.split(" ", 1)
-        chapter, verse = rest.split(":")
-        return book, int(chapter), int(verse)
+        parts = ref.split(" ")
+
+        # Check if the first part is a number (e.g., "1", "2", "3")
+        if parts[0].isdigit():
+            # Multi-word book name like "1 John" or "2 Kings"
+            book = f"{parts[0]} {parts[1].capitalize()}"
+            rest = " ".join(parts[2:])
+        elif len(parts) >= 3 and parts[0].lower() == "song" and parts[1].lower() == "of":
+            # Handle "Song of Solomon" or "Song of Songs"
+            if parts[2].lower() in ("solomon", "songs"):
+                book = "Song Of Solomon"
+                rest = " ".join(parts[3:])
+            else:
+                # Single-word book name like "Song"
+                book = parts[0].capitalize()
+                rest = " ".join(parts[1:])
+        else:
+            # Single-word book name like "John"
+            book = parts[0].capitalize()
+            rest = " ".join(parts[1:])
+
+        if not rest:
+            # Only book name provided, default to chapter 1, verse 1
+            return book, -1, -1
+        elif ":" in rest:
+            chapter, verse = rest.split(":")
+            return book, int(chapter), int(verse)
+        else:
+            # Only chapter provided, default verse to -1
+            return book, int(rest), -1
 
     @staticmethod
     def _is_selection_mode_ref(

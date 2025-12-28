@@ -104,7 +104,7 @@ class BibleGatewayTranslation(Translation):
             sorted_results = [results_by_book[name] for name in names]
             return sorted_results
 
-    async def aget_book(self, name: str, client: BibleGatewayClient | None = None) -> Book:
+    async def aget_book(self, name: str, client: BibleGatewayClient | None = None, *, on_chapter_complete=None) -> Book:
         """
         Asynchronously return a single book by name.
 
@@ -112,6 +112,7 @@ class BibleGatewayTranslation(Translation):
 
         :param name: The book name (e.g., "Genesis", "John").
         :param client: Optional shared `BibleGatewayClient` to reuse.
+        :param on_chapter_complete: Callback function to invoke after each chapter is loaded.
         :returns: Book: The corresponding `Book` object containing all chapters and verses.
         :raises BookNotFoundError: If the book name is not recognized for this translation.
         """
@@ -122,7 +123,10 @@ class BibleGatewayTranslation(Translation):
 
         # Prepare concurrent chapter fetch tasks, reusing session if provided
         async def run(i: int, cl: BibleGatewayClient):
-            return await self.aget_chapter(canonical_name, i, cl)
+            chapter = await self.aget_chapter(canonical_name, i, cl)
+            if on_chapter_complete:
+                on_chapter_complete()
+            return chapter
 
         sem = asyncio.Semaphore(self.max_concurrency) if self.max_concurrency else None
 
@@ -130,10 +134,10 @@ class BibleGatewayTranslation(Translation):
         async with client_to_use if client is None else nullcontext() as session_client:
             client_for_tasks = session_client if client is None else client
             tasks = [
-                asyncio.create_task(self._with_sem(sem, run, i, client_for_tasks) if sem else run(i, client_for_tasks))
+                asyncio.create_task(self._with_sem(sem, run, i, client_for_tasks) if sem else run(i, client_for_tasks))  # ty:ignore[invalid-argument-type]
                 for i in range(1, chapter_count + 1)
             ]
-            results = await asyncio.gather(*tasks)
+            results = list(await asyncio.gather(*tasks))
 
         results.sort(key=lambda x: x.number)
 
@@ -184,11 +188,12 @@ class BibleGatewayTranslation(Translation):
                 for element in extra_content:
                     element.decompose()
 
-            if verse.select_one("sup.versenum"):
-                verse_number = int(verse.select_one("sup.versenum").get_text(strip=True))
-                verse.select_one("sup.versenum").decompose()
+            verse_num_element = verse.select_one("sup.versenum")
+            if verse_num_element:
+                verse_number = int(verse_num_element.get_text(strip=True))
+                verse_num_element.decompose()
             else:
-                verse_number = 1
+                verse_number = -1
 
             verse_text = verse.get_text(strip=True)
             verses.append(Verse(number=verse_number, text=verse_text))
@@ -268,7 +273,17 @@ class BibleGatewayTranslation(Translation):
                 return await self.aget_book(book_name, client)
 
             tasks = [asyncio.create_task(run(book)) for book in required_books_list]
-            fetched_books = await asyncio.gather(*tasks)
+            fetched_books = list(await asyncio.gather(*tasks))
+
+            # Prepare info object to reuse
+            info = Info(
+                translation=self.name,
+                abbreviation=self.abbreviation,
+                language=self.language,
+                copyright=self.copyright,
+                url=self.url,
+                fetch_date=datetime.now(tz=ZoneInfo("UTC")).isoformat(),
+            )
 
             # Trim verses/chapters at the boundaries
             if start_book_c == end_book_c:
@@ -283,20 +298,33 @@ class BibleGatewayTranslation(Translation):
                             continue
                         new_verses.append(v)
                     trimmed_chapters.append(Chapter(number=c.number, verses=new_verses))
-                fetched_books[0] = Book(name=book.name, chapters=trimmed_chapters)
+                fetched_books[0] = Book(name=book.name, chapters=trimmed_chapters, info=info)
             else:
                 # Trim start book
                 start_book_obj = fetched_books[0]
-                start_book_obj.chapters = [
-                    Chapter(number=c.number, verses=[v for v in c.verses if v.number >= start_verse])
-                    for c in start_book_obj.chapters[start_chapter - 1 :]
-                ]
+                fetched_books[0] = Book(
+                    name=start_book_obj.name,
+                    chapters=[
+                        Chapter(number=c.number, verses=[v for v in c.verses if v.number >= start_verse])
+                        for c in start_book_obj.chapters[start_chapter - 1:]
+                    ],
+                    info=info,
+                )
 
                 # Trim end book
                 end_book_obj = fetched_books[-1]
-                end_book_obj.chapters = [
-                    Chapter(number=c.number, verses=[v for v in c.verses if v.number <= end_verse])
-                    for c in end_book_obj.chapters[:end_chapter]
-                ]
+                fetched_books[-1] = Book(
+                    name=end_book_obj.name,
+                    chapters=[
+                        Chapter(number=c.number, verses=[v for v in c.verses if v.number <= end_verse])
+                        for c in end_book_obj.chapters[:end_chapter]
+                    ],
+                    info=info,
+                )
+
+                # Ensure all books in between also have info (though they should already)
+                for i in range(1, len(fetched_books) - 1):
+                    if not fetched_books[i].info:
+                        fetched_books[i].info = info
 
             return fetched_books

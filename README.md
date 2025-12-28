@@ -80,7 +80,45 @@ pytest
 
 ## Usage
 
-How to use the package here.
+The package provides a CLI for fetching and exporting Bible translations.
+
+### Examples
+
+* **Fetch a verse:**
+  ```bash
+  bt verse "John 3:16"
+  ```
+* **Fetch a chapter:**
+  ```bash
+  bt chapter "John 3"
+  ```
+* **Fetch a book:**
+  ```bash
+  bt book John
+  ```
+* **Fetch all books:**
+  ```bash
+  bt books
+  ```
+* **Fetch a selection:**
+  ```bash
+  bt selection "John 3:16" "John 3:18"
+  ```
+
+### Options
+
+In any command, you can specify the translation, output filename, and format:
+
+* **Specify translation (default: KJV):**
+  ```bash
+  bt verse "John 3:16" --translation KJV
+  # or
+  bt verse "John 3:16" -t KJV
+  ```
+* **Specify output file and format (default: export, json):**
+  ```bash
+  bt verse "John 3:16" my_export json
+  ```
 
 ## Changelog
 

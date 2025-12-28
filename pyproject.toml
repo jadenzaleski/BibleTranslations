@@ -1,15 +1,22 @@
 [project]
 name = "bible-translations"
 version = "0.1.0"
-description = "A package to fetch and provide you all the Bible translations available on the internet."
+description = "A Python package for discovering, fetching, and working with publicly available Bible translations and translation metadata."
 authors = [
-    { name="Jaden Zaleski", email="jadenzaleski@icloud.com" },
+    { name = "Jaden Zaleski", email = "jadenzaleski@icloud.com" },
 ]
 maintainers = [
-    { name="Jaden Zaleski", email="jadenzaleski@icloud.com" },
+    { name = "Jaden Zaleski", email = "jadenzaleski@icloud.com" },
 ]
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.14"
+dependencies = [
+    "aiohttp",
+    "beautifulsoup4",
+    "typing-extensions",
+    "click",
+    "rich",
+]
 license = "MIT"
 license-files = ["LICEN[CS]E*"]
 keywords = [
@@ -42,10 +49,13 @@ bible-translations = "bible_translations.core:main"
 
 [build-system]
 requires = [
-    "setuptools>=80.9.0",
+    "setuptools>=65",
     "wheel"
 ]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -55,9 +65,7 @@ dev = [
     "pytest",
     "pytest-asyncio",
     "ruff",
-    "aiohttp",
-    "beautifulsoup4",
-
+    "build"
 ]
 
 [tool.pytest.ini_options]
