@@ -1,6 +1,6 @@
 [project]
 name = "bible-translations"
-version = "0.1.0"
+version = "0.1.0" # MUST ALSO CHANGE IN constants.py
 description = "A Python package for discovering, fetching, and working with publicly available Bible translations and translation metadata."
 authors = [
     { name = "Jaden Zaleski", email = "jadenzaleski@icloud.com" },
@@ -44,8 +44,8 @@ Issues = "https://github.com/jadenzaleski/bible-translations/issues"
 Changelog = "https://github.com/jadenzaleski/bible-translations/releases"
 
 [project.scripts]
-bt = "bible_translations.core:main"
-bible-translations = "bible_translations.core:main"
+bt = "bible_translations.cli:main"
+bible-translations = "bible_translations.cli:main"
 
 [build-system]
 requires = [

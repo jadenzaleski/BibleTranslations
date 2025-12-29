@@ -1,4 +1,4 @@
-VERSION = "0.1.0"
+VERSION = "0.1.0"  # MUST ALSO CHANGE IN pyproject.toml
 
 BIBLE_GATEWAY_BASE_URL = "https://www.biblegateway.com/passage/"
 

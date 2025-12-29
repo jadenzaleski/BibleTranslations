@@ -11,17 +11,23 @@ from bible_translations.models.chapter import Chapter
 from bible_translations.models.info import Info
 from bible_translations.translations import TRANSLATIONS, get_translation
 from bible_translations.utils.exporter import Exporter
+from bible_translations.utils.logo import display_ansi_art
 
 console = Console()
 
 customSpinner = SpinnerColumn(spinner_name="dots10", finished_text="[green]✓[/green]")
 
 
-@click.group()
+@click.group(invoke_without_command=True)
 @click.version_option(version=VERSION)
-def cli():
+@click.pass_context
+def cli(ctx: click.Context):
     """Bible Translations CLI - A tool to fetch and export Bible translations."""
-    pass
+    if ctx.invoked_subcommand is None:
+        display_ansi_art()
+        print()
+        click.echo(ctx.get_help())
+        ctx.exit()
 
 
 def run_export(book_list, output_file, file_format):
