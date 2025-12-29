@@ -16,13 +16,13 @@ from bible_translations.utils.logger import logger
 class Exporter:
     """Export Bible translations to various formats."""
 
-    def __init__(self, output_dir: str = "exports"):
+    def __init__(self, output_dir: Path = "exports"):
         """
         Initialize the exporter.
 
         :param output_dir: Directory to save exported files
         """
-        self.output_dir = Path(output_dir)
+        self.output_dir = output_dir
         self.output_dir.mkdir(exist_ok=True)
 
     def export(
@@ -31,7 +31,7 @@ class Exporter:
         file_format: str = "json",
         compression: Literal[".tar.gz", ".tgz", ".zip"] = ".zip",
         folder_name: str | None = None,
-    ) -> str:
+    ) -> Path:
         """
         Export books to the specified format.
 
@@ -48,6 +48,8 @@ class Exporter:
 
         # first book info is always used
         book_info = books[0].info
+        if book_info is None:
+            raise ValueError("Book.info is required for export")
 
         # Create a temp directory and do all the work in there
         with tempfile.TemporaryDirectory() as tempdir:
@@ -79,13 +81,13 @@ class Exporter:
                 output_path = str(self.output_dir / f"{Path(parent_folder).name}.tar.gz")
                 with tarfile.open(output_path, "w:gz") as tar:
                     tar.add(parent_folder, arcname=Path(parent_folder).name)
-                return output_path
+                return Path(output_path)
             else:  # .zip
                 output_path = str(self.output_dir / f"{Path(parent_folder).name}.zip")
                 with zipfile.ZipFile(output_path, "w", zipfile.ZIP_DEFLATED) as zip_file:
                     for file in Path(parent_folder).rglob("*"):
                         zip_file.write(file, file.relative_to(Path(parent_folder)))
-                return output_path
+                return Path(output_path)
 
     @staticmethod
     def _export_json(books: List[Book], output_dir: str, info: Info):

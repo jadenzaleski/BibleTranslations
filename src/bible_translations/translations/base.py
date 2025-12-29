@@ -1,9 +1,12 @@
 import asyncio
 from abc import ABC, abstractmethod
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from bible_translations.constants import DEFAULT_BOOK_CHAPTER_COUNTS
 from bible_translations.models.book import Book
 from bible_translations.models.chapter import Chapter
+from bible_translations.models.info import Info
 from bible_translations.models.verse import Verse
 from bible_translations.utils.logger import logger
 
@@ -304,6 +307,16 @@ class Translation(ABC):
         else:
             # Only chapter provided, default verse to -1
             return book, int(rest), 1
+
+    def getInfo(self):
+        return Info(
+            translation=self.name,
+            abbreviation=self.abbreviation,
+            language=self.language,
+            copyright=self.copyright,
+            url=self.url,
+            fetch_date=datetime.now(tz=ZoneInfo("UTC")).isoformat(),
+        )
 
     @staticmethod
     def _is_selection_mode_ref(

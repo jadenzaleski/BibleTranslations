@@ -1,12 +1,9 @@
 import asyncio
 from contextlib import nullcontext
-from datetime import datetime
-from zoneinfo import ZoneInfo
 
 from bible_translations.exceptions import BookNotFoundError, ChapterNotFoundError, VerseNotFoundError
 from bible_translations.models.book import Book
 from bible_translations.models.chapter import Chapter
-from bible_translations.models.info import Info
 from bible_translations.models.verse import Verse
 from bible_translations.translations.base import Translation
 from bible_translations.utils.fetch.bible_gateway import BibleGatewayClient
@@ -146,16 +143,7 @@ class BibleGatewayTranslation(Translation):
 
         results.sort(key=lambda x: x.number)
 
-        info = Info(
-            translation=self.name,
-            abbreviation=self.abbreviation,
-            language=self.language,
-            copyright=self.copyright,
-            url=self.url,
-            fetch_date=datetime.now(tz=ZoneInfo("UTC")).isoformat(),
-        )
-
-        return Book(name=canonical_name, chapters=results, info=info)
+        return Book(name=canonical_name, chapters=results, info=self.getInfo())
 
     async def aget_chapter(
         self, book_name: str, chapter_number: int, client: BibleGatewayClient | None = None
@@ -198,7 +186,7 @@ class BibleGatewayTranslation(Translation):
                 verse_number = int(verse_num_element.get_text(strip=True))
                 verse_num_element.decompose()
             else:
-                verse_number = -1
+                verse_number = 1
 
             verse_text = verse.get_text(strip=True)
             verses.append(Verse(number=verse_number, text=verse_text))
@@ -280,15 +268,7 @@ class BibleGatewayTranslation(Translation):
             tasks = [asyncio.create_task(run(book)) for book in required_books_list]
             fetched_books = list(await asyncio.gather(*tasks))
 
-            # Prepare info object to reuse
-            info = Info(
-                translation=self.name,
-                abbreviation=self.abbreviation,
-                language=self.language,
-                copyright=self.copyright,
-                url=self.url,
-                fetch_date=datetime.now(tz=ZoneInfo("UTC")).isoformat(),
-            )
+            info = self.getInfo()
 
             # Trim verses/chapters at the boundaries
             if start_book_c == end_book_c:

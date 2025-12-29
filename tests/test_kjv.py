@@ -1,5 +1,3 @@
-import logging
-
 import pytest
 
 from bible_translations.exceptions import BookNotFoundError, ChapterNotFoundError, VerseNotFoundError
@@ -20,11 +18,10 @@ async def test_aget_verse_john_3_16():
 
 @pytest.mark.asyncio
 async def test_aget_verse_amos_9_8():
-    logging.basicConfig(level=logging.DEBUG, force=True)
     kjv = KJV()
     verse = await kjv.aget_verse(book_name="Amos", chapter_number=9, verse_number=8)
     # https://www.biblegateway.com/passage/?search=Amos%209%3A8&version=KJV
-    # Testing this to make sure we handle the small-caps calss properly.
+    # Testing this to make sure we handle the small-caps class properly.
     assert (
         "Behold, the eyes of the Lord God are upon the sinful kingdom, and I will destroy it from off the face of the"
         " earth; saving that I will not utterly destroy the house of Jacob, saith the Lord." == verse.text
@@ -58,8 +55,8 @@ async def test_aget_chapter_john_1():
     kjv = KJV()
     chapter = await kjv.aget_chapter(book_name="John", chapter_number=1)
     assert len(chapter.verses) == 51  # There are 51 verses
-    assert chapter.verses[0].number == 1  # Verse 1 hase number 1
-    assert chapter.verses[-1].number == 51  # Verse 51 have number 51
+    for i in range(1, 52):
+        assert chapter.verses[i - 1].number == i
     assert chapter.verses[23].text == "And they which were sent were of the Pharisees."
 
 

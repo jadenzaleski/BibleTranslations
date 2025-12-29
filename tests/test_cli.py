@@ -37,9 +37,11 @@ def test_bt_books():
     """Test that the CLI books runs."""
     runner = CliRunner()
     result = runner.invoke(cli, ["books", "--help"])  # type: ignore
+    assert result.exit_code == 0
 
 
 def test_bt_selection():
     """Test that the CLI selection runs."""
     runner = CliRunner()
     result = runner.invoke(cli, ["selection", "--help"])  # type: ignore
+    assert result.exit_code == 0
